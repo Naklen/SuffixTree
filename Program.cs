@@ -26,12 +26,12 @@ namespace SuffixTree
                         else
                             ssc += tree[i].Links[j].End - tree[i].Links[j].Start;
                 }
-            Console.WriteLine(ssc);
+            Console.WriteLine(ssc);            
         }
 
         static byte T(int i)
         {
-            return (byte)(i < 0 ? -i - 1 : sample[i]);
+            return (byte)(i < 0 ? -i - 1 : sample[i] - 97);
         }
 
         static int NewVertex()
@@ -59,7 +59,7 @@ namespace SuffixTree
             blank = NewVertex();
             root = NewVertex();
             F(root) = blank;
-            for (int i = 0; i < 256; i++)
+            for (int i = 0; i < 26; i++)
                 Link(blank, -i - 1, -i, root);
         }
 
@@ -100,7 +100,6 @@ namespace SuffixTree
 
         static Tuple<int, int> Update(int v, int start, int end)
         {
-            Link cur = tree[v].Links[T(start)];
             Tuple<bool, int> splitRes;
             int oldR = root;
             splitRes = TestAndSplit(v, start, end, T(end));
@@ -158,7 +157,7 @@ namespace SuffixTree
 
         public Vertex()
         {
-            Links = new Link[256];
+            Links = new Link[26];
             for (int i = 0; i < Links.Length; i++)
             {
                 Links[i] = new Link();
