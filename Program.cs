@@ -100,7 +100,6 @@ namespace SuffixTree
 
         static Tuple<int, int> Update(int v, int start, int end)
         {
-            Link cur = tree[v].Links[T(start)];
             Tuple<bool, int> splitRes;
             int oldR = root;
             splitRes = TestAndSplit(v, start, end, T(end));
