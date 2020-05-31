@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SuffixTree
 {
@@ -12,32 +11,94 @@ namespace SuffixTree
         static string sample;
 
         static void Main(string[] args)
-        { 
-            sample = Console.ReadLine();
+        {
+            int n = int.Parse(Console.ReadLine());
+            sample = Console.ReadLine() + Console.ReadLine() + "[";
             tree = new List<Vertex>();
             BuildTree();
-            int ssc = 0;
-            for (int i = 1; i < tree.Count-1; i++)
-                for (int j = 0; j < tree[i].Links.Length; j++)
+            Stack<Tuple<int, int, bool>> stack = new Stack<Tuple<int,int, bool>>();
+            HashSet<int> visited = new HashSet<int>();
+            int maxBothTypeDepth = 0;
+            int maxBothTypeDepthVertex = 1;
+            stack.Push(new Tuple<int, int, bool>(root, 0, false));
+            Link[] parLink = new Link[tree.Count - 2];
+            while (stack.Count != 0)
+            {
+                var t = stack.Peek();
+                if (t.Item3)
                 {
-                    if (tree[i].Links[j].To != -1) 
-                        if (tree[i].Links[j].End == int.MaxValue)
-                            ssc += sample.Length - tree[i].Links[j].Start;
-                        else
-                            ssc += tree[i].Links[j].End - tree[i].Links[j].Start;
+                    stack.Pop();
+                    var isFirstType = n*2-t.Item2 < n;
+                    tree[t.Item1].FirstType = isFirstType;
+                    tree[t.Item1].SecondType = !isFirstType;
+                    var par = tree[t.Item1].Parent;
+                    if (par != 0)
+                        if (isFirstType)
+                            tree[par].FirstType = true;
+                        else tree[par].SecondType = true;
+                    visited.Add(t.Item1);
                 }
-            Console.WriteLine(ssc);
+                else if (visited.Contains(t.Item1))
+                {
+                    stack.Pop();
+                    if (tree[t.Item1].FirstType && tree[t.Item1].SecondType)
+                        if (maxBothTypeDepth < t.Item2)
+                        {
+                            maxBothTypeDepth = t.Item2;
+                            maxBothTypeDepthVertex = t.Item1;
+                        }
+                    var par = tree[t.Item1].Parent;
+                    if (par != 0)
+                    {
+                        if (tree[t.Item1].FirstType)
+                            tree[par].FirstType = tree[t.Item1].FirstType;
+                        if (tree[t.Item1].SecondType)
+                            tree[par].SecondType = tree[t.Item1].SecondType;
+                    }
+                }
+                else
+                {
+                    foreach (Link l in tree[t.Item1].Links)
+                        if (l.To != -1)
+                        {
+                            bool nextIsLeaf = l.End == int.MaxValue;
+                            int lengthNext = nextIsLeaf ? t.Item2 + (sample.Length - l.Start) : t.Item2 + (l.End - l.Start);
+                            stack.Push(new Tuple<int, int, bool>(l.To, lengthNext, nextIsLeaf));
+                            parLink[l.To - 2] = l;
+                        }
+                    visited.Add(t.Item1);
+                }
+            }
+            List<string> lcs = new List<string>();
+            while(maxBothTypeDepthVertex > 1)
+            {
+                var substringLength = parLink[maxBothTypeDepthVertex - 2].End - parLink[maxBothTypeDepthVertex - 2].Start;
+                lcs.Add(sample.Substring(parLink[maxBothTypeDepthVertex - 2].Start, substringLength));
+                maxBothTypeDepthVertex = tree[maxBothTypeDepthVertex].Parent;
+            }
+            lcs.Reverse();
+            if (!tree[root].FirstType || !tree[root].SecondType)
+            {
+                var maxStart = 0;
+                foreach (var l in tree[root].Links)
+                    if (l.Start > maxStart)
+                        maxStart = l.Start;
+                Console.WriteLine(sample.Substring(maxStart, n - maxStart));
+            }
+            else
+                Console.WriteLine(String.Join("", lcs));
+            Console.ReadKey();
         }
 
         static byte T(int i)
         {
-            return (byte)(i < 0 ? -i - 1 : sample[i]);
+            return (byte)(i < 0 ? -i - 1 : sample[i] - 65);
         }
 
-        static int NewVertex()
+        static int NewVertex(int parent)
         {
             int i = tree.Count();
-            tree.Add(new Vertex());
+            tree.Add(new Vertex(parent));
             return i;
 
         }
@@ -56,10 +117,10 @@ namespace SuffixTree
         static void InitTree()
         {
             tree.Clear();
-            blank = NewVertex();
-            root = NewVertex();
+            blank = NewVertex(-1);
+            root = NewVertex(0);
             F(root) = blank;
-            for (int i = 0; i < 256; i++)
+            for (int i = 0; i < 27; i++)
                 Link(blank, -i - 1, -i, root);
         }
 
@@ -90,7 +151,8 @@ namespace SuffixTree
                 Link cur = tree[v].Links[T(start)];
                 if (c == T(cur.Start + end - start))
                     return new Tuple<bool, int>(true, v);
-                int middle = NewVertex();
+                int middle = NewVertex(v);
+                tree[cur.To].Parent = middle;
                 Link(v, cur.Start, cur.Start + end - start, middle);
                 Link(middle, cur.Start + end - start, cur.End, cur.To);
                 return new Tuple<bool, int>(false, middle);
@@ -100,13 +162,12 @@ namespace SuffixTree
 
         static Tuple<int, int> Update(int v, int start, int end)
         {
-            Link cur = tree[v].Links[T(start)];
             Tuple<bool, int> splitRes;
             int oldR = root;
             splitRes = TestAndSplit(v, start, end, T(end));
             while (!splitRes.Item1)
             {
-                Link(splitRes.Item2, end, int.MaxValue, NewVertex());
+                Link(splitRes.Item2, end, int.MaxValue, NewVertex(splitRes.Item2));
                 if (oldR != root)
                     F(oldR) = splitRes.Item2;
                 oldR = splitRes.Item2;
@@ -155,15 +216,19 @@ namespace SuffixTree
     {
         public Link[] Links { get; set; }
         public int suffix;
+        public int Parent { get; set; }
+        public bool FirstType { get; set; }
+        public bool SecondType { get; set; }
 
-        public Vertex()
+        public Vertex(int parent)
         {
-            Links = new Link[256];
+            Links = new Link[27];
             for (int i = 0; i < Links.Length; i++)
             {
                 Links[i] = new Link();
                 suffix = -1;
             }
+            Parent = parent;
         }
     }
 }
