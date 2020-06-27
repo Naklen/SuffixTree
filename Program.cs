@@ -16,17 +16,8 @@ namespace SuffixTree
             sample = Console.ReadLine();
             tree = new List<Vertex>();
             BuildTree();
-            int ssc = 0;
-            for (int i = 1; i < tree.Count-1; i++)
-                for (int j = 0; j < tree[i].Links.Length; j++)
-                {
-                    if (tree[i].Links[j].To != -1) 
-                        if (tree[i].Links[j].End == int.MaxValue)
-                            ssc += sample.Length - tree[i].Links[j].Start;
-                        else
-                            ssc += tree[i].Links[j].End - tree[i].Links[j].Start;
-                }
-            Console.WriteLine(ssc);
+            PrintTree(root);
+            Console.ReadKey();
         }
 
         static byte T(int i)
@@ -129,6 +120,26 @@ namespace SuffixTree
                 activePoint = Canonize(activePoint.Item1, activePoint.Item2, i + 1);
             }
         }
+
+        static void PrintTree(int v, int start = 0, int end = 0, string prefix = "")
+        {
+            Console.Write(prefix);
+            for (int i = start; i < end && i < sample.Length; i++)
+                Console.Write((char)T(i));
+            if (end == int.MaxValue)
+                Console.Write("@");
+            Console.Write($" [{v}]");
+            if (F(v) != 1)
+                Console.Write($" f = {F(v)}");
+            Console.WriteLine("");
+
+            for (int i = 0; i < 256; i++)
+                if (tree[v].Links[i].To != -1)
+                {
+                    var link = tree[v].Links[i];
+                    PrintTree(link.To, link.Start, link.End, prefix + "   ");
+                }
+        }
     }
 
     class Link
@@ -159,10 +170,8 @@ namespace SuffixTree
         {
             Links = new Link[256];
             for (int i = 0; i < Links.Length; i++)
-            {
                 Links[i] = new Link();
-                suffix = -1;
-            }
+            suffix = -1;
         }
     }
 }
