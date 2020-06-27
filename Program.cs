@@ -12,8 +12,8 @@ namespace SuffixTree
 
         static void Main(string[] args)
         {
-            int n = int.Parse(Console.ReadLine());
-            sample = Console.ReadLine() + Console.ReadLine() + "[";
+            int n = int.Parse(Console.ReadLine()) + 1;
+            sample = Console.ReadLine() + "@" + Console.ReadLine() + "[";
             tree = new List<Vertex>();
             BuildTree();
             Stack<Tuple<int, int, bool>> stack = new Stack<Tuple<int,int, bool>>();
@@ -87,12 +87,11 @@ namespace SuffixTree
             }
             else
                 Console.WriteLine(String.Join("", lcs));
-            Console.ReadKey();
         }
 
         static byte T(int i)
         {
-            return (byte)(i < 0 ? -i - 1 : sample[i] - 65);
+            return (byte)(i < 0 ? -i - 1 : sample[i] - 64);
         }
 
         static int NewVertex(int parent)
@@ -120,7 +119,7 @@ namespace SuffixTree
             blank = NewVertex(-1);
             root = NewVertex(0);
             F(root) = blank;
-            for (int i = 0; i < 27; i++)
+            for (int i = 0; i < 28; i++)
                 Link(blank, -i - 1, -i, root);
         }
 
@@ -222,7 +221,7 @@ namespace SuffixTree
 
         public Vertex(int parent)
         {
-            Links = new Link[27];
+            Links = new Link[28];
             for (int i = 0; i < Links.Length; i++)
             {
                 Links[i] = new Link();
