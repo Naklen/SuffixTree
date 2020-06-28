@@ -1,15 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
 namespace SuffixTree
 {
     class Program
     {
-        static int root, blank;
-        static List<Vertex> tree;
-        static string sample;
+        static int root, blank; //Индексы корневой и вспомогательной вершин
+        static List<Vertex> tree; //Дерево представляется набором вершин
+        static string sample; //Строка, для которой строится дерево
 
         static void Main(string[] args)
         { 
@@ -20,12 +19,14 @@ namespace SuffixTree
             Console.ReadKey();
         }
 
-        static byte T(int i)
+        //Отдает номер символа в таблице ASCII по заданному индексу
+        static byte T(int i) 
         {
             return (byte)(i < 0 ? -i - 1 : sample[i]);
         }
 
-        static int NewVertex()
+        //Создает новую вершину в суффиксном дереве
+        static int NewVertex() 
         {
             int i = tree.Count();
             tree.Add(new Vertex());
@@ -33,17 +34,24 @@ namespace SuffixTree
 
         }
 
+        //Создает ребро в суффиксном дереве
+        //from, to - вершины
+        //start, end - позиции начала и конца метки в строке
         static void Link(int from, int start, int end, int to)
         {
             tree[from].Links[T(start)] = new Link(start, end, to);
         }
 
+        //Функция прохождения по суффиксной ссылке
         static ref int F(int v)
         {
             ref int s = ref tree[v].suffix;
             return ref s;
         }
 
+        //Инициализация суффиксного дерева
+        //При инициализации создаются две вершины root и 
+        //вспомогательная blank(родитель корневой вершины)
         static void InitTree()
         {
             tree.Clear();
@@ -54,6 +62,12 @@ namespace SuffixTree
                 Link(blank, -i - 1, -i, root);
         }
 
+        //Приводит reference pair к каноническому виду
+        //Reference pair позволяет представить некончающийся в листе суффикс
+        //в неявном суффиксном дереве
+        //Reference pair представляет собой пару вида [вершина, [начало, конец]]
+        //Вершина - это вершина, до которой нужно дочитать начало суффикса, а начало и конец - это
+        //индексы начала и конца подстроки заданной строки, которые представляют конец суффикса
         static Tuple<int, int> Canonize(int v, int start, int end)
         {
             if (end <= start)
@@ -72,6 +86,8 @@ namespace SuffixTree
             }
         }
 
+        //Выполняет проверку возможности перехода по символу из состояния [v, [start, end]]
+        //по символу с
         static Tuple<bool, int> TestAndSplit(int v, int start, int end, byte c)
         {
             if (end <= start)
@@ -85,10 +101,10 @@ namespace SuffixTree
                 Link(v, cur.Start, cur.Start + end - start, middle);
                 Link(middle, cur.Start + end - start, cur.End, cur.To);
                 return new Tuple<bool, int>(false, middle);
-
             }
         }
 
+        //Расширение суффиксного дерева
         static Tuple<int, int> Update(int v, int start, int end)
         {
             Tuple<bool, int> splitRes;
@@ -110,6 +126,7 @@ namespace SuffixTree
             return new Tuple<int, int>(v, start);
         }
 
+        //Построение целого суффиксного дерева
         static void BuildTree()
         {
             InitTree();
@@ -121,6 +138,7 @@ namespace SuffixTree
             }
         }
 
+        //Вывод представления дерева на консоль
         static void PrintTree(int v, int start = 0, int end = 0, string prefix = "")
         {
             Console.Write(prefix);
@@ -142,6 +160,7 @@ namespace SuffixTree
         }
     }
 
+    //Представляет ребро в суффиксном дереве
     class Link
     {
         public int Start { get; set; }
@@ -161,6 +180,7 @@ namespace SuffixTree
         }
     }
 
+    //Представляет вершину в суффиксном дереве
     class Vertex
     {
         public Link[] Links { get; set; }
